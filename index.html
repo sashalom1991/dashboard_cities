@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Міста України | Cities of Ukraine</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <!-- Style-->
+    <style>
+        :root {
+            --primary-color: #005BBB;
+            /* Ukrainian blue */
+            --secondary-color: #FFD500;
+            /* Ukrainian yellow */
+            --text-color: #333;
+            --light-bg: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .lang-btn {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 50px);
+            overflow: hidden;
+        }
+
+        #map {
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-closed {
+            transform: translateX(320px);
+        }
+
+        .toggle-btn {
+            position: absolute;
+            top: 70px;
+            right: 330px;
+            background: white;
+            border: 1px solid #ddd;
+            border-right: none;
+            width: 20px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px 0 0 4px;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        .toggle-btn-closed {
+            right: 10px;
+        }
+
+        .placeholder {
+            display: flex;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .city-info {
+            padding: 20px;
+        }
+
+        .city-header {
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+
+        .leaflet-popup-content {
+            margin: 10px;
+            text-align: center;
+        }
+
+        .popup-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin-top: 5px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column;
+            }
+
+            #map {
+                height: 60vh;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 40vh;
+                border-left: none;
+                border-top: 1px solid #ddd;
+            }
+
+            .sidebar-closed {
+                transform: translateY(40vh);
+            }
+
+            .toggle-btn {
+                top: calc(60vh - 20px);
+                right: 20px;
+                transform: rotate(90deg);
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div>
+            <span class="ua">Міста України</span>
+            <span class="en" style="display:none">Cities of Ukraine</span>
+        </div>
+        <button id="lang-toggle" class="lang-btn">EN</button>
+    </header>
+
+    <main>
+        <div id="map"></div>
+
+        <div id="sidebar" class="sidebar">
+            <div id="placeholder" class="placeholder">
+                <div>
+                    <p class="ua">Виберіть місто на карті для перегляду інформації</p>
+                    <p class="en" style="display:none">Select a city on the map to view information</p>
+                </div>
+            </div>
+            <div id="city-info" class="city-info" style="display: none;"></div>
+        </div>
+
+        <button id="toggle-btn" class="toggle-btn">&lt;</button>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+    <script>
+        // Core variables
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const placeholder = document.getElementById('placeholder');
+        const cityInfo = document.getElementById('city-info');
+        const langToggle = document.getElementById('lang-toggle');
+
+        // Language state
+        let currentLang = 'ua';
+
+        // Initialize Leaflet map
+        const map = L.map('map').setView([48.4, 31.2], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Sample data for Ukrainian cities
+        const cities = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "name_ua": "Київ",
+                        "name_en": "Kyiv",
+                        "type_ua": "Столиця",
+                        "type_en": "Capital",
+                        "population": 2967360,
+                        "area": 839,
+                        "region_ua": "м. Київ",
+                        "region_en": "Kyiv City",
+                        "founded": 482,
+                        "population_data": [
+                            { "year": 2015, "value": 2888000 },
+                            { "year": 2016, "value": 2906000 },
+                            { "year": 2017, "value": 2925000 },
+                            { "year": 2018, "value": 2934000 },
+                            { "year": 2019, "value": 2950800 },
+                            { "year": 2020, "value": 2962000 },
+                            { "year": 2021, "value": 2967360 }
+                        ]
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [30.5234, 50.4501]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "name_ua": "Львів",
+                        "name_en": "Lviv",
+                        "type_ua": "Місто",
+                        "type_en": "City",
+                        "population": 721701,
+                        "area": 182,
+                        "region_ua": "Львівська область",
+                        "region_en": "Lviv Oblast",
+                        "founded": 1256,
+                        "population_data": [
+                            { "year": 2015, "value": 729000 },
+                            { "year": 2016, "value": 728000 },
+                            { "year": 2017, "value": 727000 },
+                            { "year": 2018, "value": 726000 },
+                            { "year": 2019, "value": 724000 },
+                            { "year": 2020, "value": 723000 },
+                            { "year": 2021, "value": 721701 }
+                        ]
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [24.0291, 49.8397]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "name_ua": "Одеса",
+                        "name_en": "Odesa",
+                        "type_ua": "Місто",
+                        "type_en": "City",
+                        "population": 1017699,
+                        "area": 162,
+                        "region_ua": "Одеська область",
+                        "region_en": "Odesa Oblast",
+                        "founded": 1794,
+                        "population_data": [
+                            { "year": 2015, "value": 1016000 },
+                            { "year": 2016, "value": 1016500 },
+                            { "year": 2017, "value": 1017000 },
+                            { "year": 2018, "value": 1017200 },
+                            { "year": 2019, "value": 1017500 },
+                            { "year": 2020, "value": 1017600 },
+                            { "year": 2021, "value": 1017699 }
+                        ]
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [30.7233, 46.4825]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "name_ua": "Харків",
+                        "name_en": "Kharkiv",
+                        "type_ua": "Місто",
+                        "type_en": "City",
+                        "population": 1443207,
+                        "area": 350,
+                        "region_ua": "Харківська область",
+                        "region_en": "Kharkiv Oblast",
+                        "founded": 1654,
+                        "population_data": [
+                            { "year": 2015, "value": 1452000 },
+                            { "year": 2016, "value": 1450000 },
+                            { "year": 2017, "value": 1447000 },
+                            { "year": 2018, "value": 1446000 },
+                            { "year": 2019, "value": 1445000 },
+                            { "year": 2020, "value": 1444000 },
+                            { "year": 2021, "value": 1443207 }
+                        ]
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [36.2304, 49.9935]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "name_ua": "Дніпро",
+                        "name_en": "Dnipro",
+                        "type_ua": "Місто",
+                        "type_en": "City",
+                        "population": 990724,
+                        "area": 409,
+                        "region_ua": "Дніпропетровська область",
+                        "region_en": "Dnipropetrovsk Oblast",
+                        "founded": 1776,
+                        "population_data": [
+                            { "year": 2015, "value": 997000 },
+                            { "year": 2016, "value": 996000 },
+                            { "year": 2017, "value": 995000 },
+                            { "year": 2018, "value": 993000 },
+                            { "year": 2019, "value": 992000 },
+                            { "year": 2020, "value": 991000 },
+                            { "year": 2021, "value": 990724 }
+                        ]
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [35.0462, 48.464]
+                    }
+                }
+            ]
+        };
+
+        // Track the current city & chart
+        let currentCity = null;
+        let populationChart = null;
+
+        // Add cities to map
+        const citiesLayer = L.geoJSON(cities, {
+            pointToLayer: (feature, latlng) => {
+                // Size based on population
+                const pop = feature.properties.population;
+                const radius = pop > 1000000 ? 10 : pop > 500000 ? 8 : 6;
+
+                return L.circleMarker(latlng, {
+                    radius: radius,
+                    fillColor: '#005BBB',
+                    color: '#FFD500',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+            },
+            onEachFeature: (feature, layer) => {
+                // Create popup
+                const name = `<div><b>${feature.properties.name_ua}</b></div>`;
+                const pop = `<div>${feature.properties.population.toLocaleString('uk-UA')}</div>`;
+                const btn = `<button class="popup-btn">Детальніше</button>`;
+
+                layer.bindPopup(`<div style="text-align:center">${name}${pop}${btn}</div>`);
+
+                // Handle popup button click
+                layer.on('popupopen', () => {
+                    setTimeout(() => {
+                        const button = document.querySelector('.popup-btn');
+                        if (button) {
+                            button.onclick = () => {
+                                selectCity(feature);
+                                layer.closePopup();
+                            };
+                        }
+                    }, 10);
+                });
+
+                // Handle marker click
+                layer.on('click', () => selectCity(feature));
+            }
+        }).addTo(map);
+
+        // Functions
+        function selectCity(feature) {
+            currentCity = feature;
+
+            // Ensure sidebar is open
+            if (sidebar.classList.contains('sidebar-closed')) {
+                toggleSidebar();
+            }
+
+            displayCityInfo(feature);
+
+            // Show city info, hide placeholder
+            placeholder.style.display = 'none';
+            cityInfo.style.display = 'block';
+        }
+
+        function displayCityInfo(feature) {
+            const props = feature.properties;
+            const lang = currentLang;
+            const name = lang === 'ua' ? props.name_ua : props.name_en;
+            const type = lang === 'ua' ? props.type_ua : props.type_en;
+            const region = lang === 'ua' ? props.region_ua : props.region_en;
+
+            // Translations
+            const t = {
+                population: lang === 'ua' ? 'Населення' : 'Population',
+                area: lang === 'ua' ? 'Площа' : 'Area',
+                region: lang === 'ua' ? 'Регіон' : 'Region',
+                founded: lang === 'ua' ? 'Засновано' : 'Founded',
+                dynamics: lang === 'ua' ? 'Динаміка населення' : 'Population Dynamics',
+                sqKm: lang === 'ua' ? 'км²' : 'km²'
+            };
+
+            // Create HTML content
+            let html = `
+                <div class="city-header">
+                    <h2>${name}</h2>
+                    <div>${type}</div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${props.population.toLocaleString(lang === 'ua' ? 'uk-UA' : 'en-US')}</div>
+                        <div>${t.population}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${props.area.toLocaleString(lang === 'ua' ? 'uk-UA' : 'en-US')}</div>
+                        <div>${t.area} (${t.sqKm})</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${region}</div>
+                        <div>${t.region}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${props.founded}</div>
+                        <div>${t.founded}</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>${t.dynamics}</h3>
+                    <div style="height: 300px; width: 100%;">
+                        <canvas id="populationChart"></canvas>
+                    </div>
+                </div>
+            `;
+
+            cityInfo.innerHTML = html;
+
+            // Create population chart
+            if (props.population_data) {
+                createPopulationChart(props.population_data);
+            }
+        }
+
+        function createPopulationChart(data) {
+            const ctx = document.getElementById('populationChart').getContext('2d');
+
+            // Destroy previous chart if exists
+            if (populationChart) {
+                populationChart.destroy();
+            }
+
+            // Create new chart
+            populationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => item.year),
+                    datasets: [{
+                        label: currentLang === 'ua' ? 'Населення' : 'Population',
+                        data: data.map(item => item.value),
+                        borderColor: '#005BBB',
+                        backgroundColor: 'rgba(0, 91, 187, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grace: '5%'
+                        }
+                    },
+                    layout: {
+                        padding: 10
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('sidebar-closed');
+            toggleBtn.classList.toggle('toggle-btn-closed');
+            toggleBtn.innerHTML = sidebar.classList.contains('sidebar-closed') ? '&gt;' : '&lt;';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ua' ? 'en' : 'ua';
+            langToggle.textContent = currentLang === 'ua' ? 'EN' : 'UA';
+
+            // Update UI language
+            document.querySelectorAll('.ua, .en').forEach(el => {
+                if (el.classList.contains(currentLang)) {
+                    el.style.display = 'inline-block';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+
+            // Update popup content
+            map.closePopup();
+
+            // Update current city info if available
+            if (currentCity) {
+                displayCityInfo(currentCity);
+            }
+        }
+
+        // Event listeners
+        toggleBtn.addEventListener('click', toggleSidebar);
+        langToggle.addEventListener('click', toggleLanguage);
+
+        // Calculate general statistics
+        function calculateStatistics() {
+            const allCities = cities.features;
+
+            // Calculate average population
+            const avgPopulation = allCities.reduce((sum, city) =>
+                sum + city.properties.population, 0) / allCities.length;
+
+            // Find city with population growth
+            const growingCities = allCities.filter(city => {
+                const data = city.properties.population_data;
+                return data && data[data.length - 1].value > data[0].value;
+            });
+
+            const growthPercentage = (growingCities.length / allCities.length) * 100;
+
+            console.log(`Average population: ${Math.round(avgPopulation).toLocaleString()}`);
+            console.log(`Cities with growth: ${growthPercentage.toFixed(1)}%`);
+        }
+
+        calculateStatistics();
+    </script>
+</body>
+
+</html>
