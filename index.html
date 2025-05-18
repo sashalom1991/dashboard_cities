@@ -1,607 +1,766 @@
 <!DOCTYPE html>
-<html lang="uk">
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Міста України | Cities of Ukraine</title>
-
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-
-    <!-- Chart.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <!-- Style-->
-    <style>
-        :root {
-            --primary-color: #005BBB;
-            /* Ukrainian blue */
-            --secondary-color: #FFD500;
-            /* Ukrainian yellow */
-            --text-color: #333;
-            --light-bg: #f5f5f5;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        body {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10;
-        }
-
-        .lang-btn {
-            background: white;
-            color: var(--primary-color);
-            border: none;
-            border-radius: 4px;
-            padding: 6px 12px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        main {
-            display: flex;
-            flex: 1;
-            height: calc(100vh - 50px);
-            overflow: hidden;
-        }
-
-        #map {
-            flex: 1;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: white;
-            border-left: 1px solid #ddd;
-            overflow-y: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar-closed {
-            transform: translateX(320px);
-        }
-
-        .toggle-btn {
-            position: absolute;
-            top: 70px;
-            right: 330px;
-            background: white;
-            border: 1px solid #ddd;
-            border-right: none;
-            width: 20px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px 0 0 4px;
-            cursor: pointer;
-            z-index: 5;
-        }
-
-        .toggle-btn-closed {
-            right: 10px;
-        }
-
-        .placeholder {
-            display: flex;
-            height: 100%;
-            align-items: center;
-            justify-content: center;
-            color: #777;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .city-info {
-            padding: 20px;
-        }
-
-        .city-header {
-            border-bottom: 2px solid var(--secondary-color);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .stat-card {
-            background: var(--light-bg);
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .stat-value {
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--primary-color);
-        }
-
-        .chart-container {
-            margin-top: 20px;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-            padding-bottom: 15px;
-        }
-
-        .leaflet-popup-content {
-            margin: 10px;
-            text-align: center;
-        }
-
-        .popup-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            margin-top: 5px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            main {
-                flex-direction: column;
-            }
-
-            #map {
-                height: 60vh;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: 40vh;
-                border-left: none;
-                border-top: 1px solid #ddd;
-            }
-
-            .sidebar-closed {
-                transform: translateY(40vh);
-            }
-
-            .toggle-btn {
-                top: calc(60vh - 20px);
-                right: 20px;
-                transform: rotate(90deg);
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ukrainian Cities Explorer</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    
+    body {
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Layout */
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-height: 100vh;
+    }
+    
+    header {
+      background-color: #1d4ed8;
+      color: white;
+      padding: 16px;
+    }
+    
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .map-panel {
+      width: 33.333%;
+      background-color: #f3f4f6;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #e5e7eb;
+    }
+    
+    .map-header {
+      padding: 12px;
+      background-color: #e5e7eb;
+      border-bottom: 1px solid #d1d5db;
+    }
+    
+    .map-container {
+      position: relative;
+      flex: 1;
+      background-color: #dbeafe;
+      padding: 8px;
+    }
+    
+    .map {
+      position: absolute;
+      inset: 0;
+      margin: 8px;
+      background-color: #bfdbfe;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .city-marker {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      z-index: 0;
+    }
+    
+    .city-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #3b82f6;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    .city-dot:hover {
+      background-color: #2563eb;
+    }
+    
+    .city-marker.selected {
+      z-index: 10;
+    }
+    
+    .city-marker.selected .city-dot {
+      width: 12px;
+      height: 12px;
+      background-color: #ef4444;
+    }
+    
+    .city-label {
+      display: none;
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    
+    .city-marker.selected .city-label {
+      display: block;
+    }
+    
+    .city-list-container {
+      height: 50%;
+      overflow-y: auto;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .city-list-header {
+      padding: 8px;
+      background-color: #e5e7eb;
+      border-bottom: 1px solid #d1d5db;
+    }
+    
+    .city-list {
+      list-style: none;
+    }
+    
+    .city-item {
+      padding: 8px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+    
+    .city-item:hover {
+      background-color: #f9fafb;
+    }
+    
+    .city-item.selected {
+      background-color: #dbeafe;
+    }
+    
+    .city-item-content {
+      display: flex;
+      align-items: center;
+    }
+    
+    .city-item-icon {
+      color: #6b7280;
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+    }
+    
+    .city-item-name {
+      font-weight: 500;
+    }
+    
+    .city-item-region {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    
+    /* Details panel */
+    .details-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .tab {
+      padding: 12px 16px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+    }
+    
+    .tab:hover {
+      color: #374151;
+    }
+    
+    .tab.active {
+      color: #2563eb;
+      border-bottom-color: #3b82f6;
+    }
+    
+    .tab-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
+    }
+    
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    
+    .tab-content h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .tab-content p {
+      margin-bottom: 8px;
+    }
+    
+    .data-section {
+      margin-bottom: 12px;
+    }
+    
+    .data-label {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .data-list {
+      list-style-type: disc;
+      padding-left: 20px;
+    }
+    
+    .data-list li {
+      margin-bottom: 4px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      color: #6b7280;
+      padding: 24px;
+    }
+    
+    .loading-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+    }
+    
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #dbeafe;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .data-notice {
+      background-color: #fffbeb;
+      border-top: 1px solid #fef3c7;
+      padding: 8px;
+      font-size: 12px;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+    }
+    
+    .notice-icon {
+      width: 12px;
+      height: 12px;
+      margin-right: 4px;
+    }
+    
+    footer {
+      background-color: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+      padding: 8px;
+      font-size: 12px;
+      color: #6b7280;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="app-container">
     <header>
-        <div>
-            <span class="ua">Міста України</span>
-            <span class="en" style="display:none">Cities of Ukraine</span>
-        </div>
-        <button id="lang-toggle" class="lang-btn">EN</button>
+      <h1>Ukrainian Cities Explorer</h1>
     </header>
-
-    <main>
-        <div id="map"></div>
-
-        <div id="sidebar" class="sidebar">
-            <div id="placeholder" class="placeholder">
-                <div>
-                    <p class="ua">Виберіть місто на карті для перегляду інформації</p>
-                    <p class="en" style="display:none">Select a city on the map to view information</p>
-                </div>
-            </div>
-            <div id="city-info" class="city-info" style="display: none;"></div>
+    
+    <div class="main-content">
+      <!-- Map and city list panel -->
+      <div class="map-panel">
+        <div class="map-header">
+          <h2>Cities Map</h2>
+          <p class="text-xs text-gray-600">Showing <span id="city-count">0</span> of 1,700+ cities</p>
         </div>
+        
+        <!-- Map visualization -->
+        <div class="map-container">
+          <div class="map" id="map">
+            <!-- City markers will be inserted here by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- City list -->
+        <div class="city-list-container">
+          <div class="city-list-header">
+            <h3>City List</h3>
+          </div>
+          <ul class="city-list" id="city-list">
+            <!-- City items will be inserted here by JavaScript -->
+          </ul>
+        </div>
+      </div>
+      
+      <!-- City details panel -->
+      <div class="details-panel">
+        <!-- Tabs -->
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="general">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
+            </svg>
+            General
+          </button>
+          <button class="tab" data-tab="history">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            History
+          </button>
+          <button class="tab" data-tab="culture">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            Culture
+          </button>
+          <button class="tab" data-tab="demographics">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            Demographics
+          </button>
+          <button class="tab" data-tab="attractions">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            Attractions
+          </button>
+        </div>
+        
+        <!-- Tab content -->
+        <div class="tab-content" id="tab-content">
+          <div class="empty-state">
+            Select a city on the map to view details
+          </div>
+        </div>
+        
+        <!-- Data loading notice - hidden by default -->
+        <div class="data-notice" id="data-notice" style="display: none;">
+          <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+          </svg>
+          Data for this tab will be loaded on demand to optimize bandwidth
+        </div>
+      </div>
+    </div>
+    
+    <footer>
+      <div>Ukrainian Cities Explorer | Optimized Structure Demo</div>
+      <div id="footer-status">No city selected</div>
+    </footer>
+  </div>
 
-        <button id="toggle-btn" class="toggle-btn">&lt;</button>
-    </main>
+  <script>
+    // Mock data for Ukrainian cities
+    const mockCities = [
+      { id: 1, name: "Kyiv", region: "Kyiv Oblast", lat: 50.4501, lng: 30.5234 },
+      { id: 2, name: "Lviv", region: "Lviv Oblast", lat: 49.8397, lng: 24.0297 },
+      { id: 3, name: "Odesa", region: "Odesa Oblast", lat: 46.4825, lng: 30.7233 },
+      { id: 4, name: "Kharkiv", region: "Kharkiv Oblast", lat: 49.9935, lng: 36.2304 },
+      { id: 5, name: "Dnipro", region: "Dnipropetrovsk Oblast", lat: 48.4647, lng: 35.0462 },
+      { id: 6, name: "Zaporizhzhia", region: "Zaporizhzhia Oblast", lat: 47.8388, lng: 35.1396 },
+      { id: 7, name: "Ivano-Frankivsk", region: "Ivano-Frankivsk Oblast", lat: 48.9226, lng: 24.7111 },
+      { id: 8, name: "Chernihiv", region: "Chernihiv Oblast", lat: 51.4982, lng: 31.2893 },
+      // More cities would be included in the actual app
+    ];
 
-    <!-- Leaflet JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    // Mock detailed data modules
+    const mockDetailModules = {
+      history: {
+        1: { founded: 482, historicalName: "Kievan Rus' capital", significantEvents: ["Golden Age in 11th century", "WWII Battle of Kyiv"] },
+        2: { founded: 1256, historicalName: "Leopolis", significantEvents: ["UNESCO World Heritage Site since 1998"] },
+        3: { founded: 1794, historicalName: "Odessa", significantEvents: ["Founded by Catherine the Great", "Important port city"] },
+        4: { founded: 1654, historicalName: "Kharkov", significantEvents: ["Major industrial center since 19th century"] },
+        5: { founded: 1776, historicalName: "Yekaterinoslav", significantEvents: ["Important manufacturing center"] },
+      },
+      culture: {
+        1: { landmarks: ["Saint Sophia Cathedral", "Kyiv Pechersk Lavra"], festivals: ["Kyiv Day", "Atlas Weekend"] },
+        2: { landmarks: ["Lviv Opera House", "Market Square"], festivals: ["Leopolis Jazz Festival", "Coffee Festival"] },
+        3: { landmarks: ["Potemkin Stairs", "Odesa Opera House"], festivals: ["Odesa International Film Festival"] },
+        4: { landmarks: ["Derzhprom", "Annunciation Cathedral"], festivals: ["KharkivMusicFest"] },
+        5: { landmarks: ["Menorah Center", "Promenade"], festivals: ["The Dnipro City Day"] },
+      },
+      demographics: {
+        1: { population: 2962180, languages: ["Ukrainian", "Russian"], ethnicGroups: ["Ukrainians", "Russians", "Jews"] },
+        2: { population: 721301, languages: ["Ukrainian"], ethnicGroups: ["Ukrainians", "Poles"] },
+        3: { population: 993120, languages: ["Ukrainian", "Russian"], ethnicGroups: ["Ukrainians", "Russians", "Bulgarians"] },
+        4: { population: 1446107, languages: ["Ukrainian", "Russian"], ethnicGroups: ["Ukrainians", "Russians"] },
+        5: { population: 998103, languages: ["Ukrainian", "Russian"], ethnicGroups: ["Ukrainians", "Russians"] },
+      },
+      attractions: {
+        1: { museums: ["National Museum of Ukraine", "Pinchuk Art Centre"], parks: ["Mariyinsky Park"], restaurants: ["Kanapa", "Spotykach"] },
+        2: { museums: ["National Museum", "Lviv History Museum"], parks: ["Stryiskyi Park"], restaurants: ["Kryivka", "Baczewski"] },
+        3: { museums: ["Archaeological Museum", "Fine Arts Museum"], parks: ["City Garden"], restaurants: ["Dacha", "Kompot"] },
+        4: { museums: ["Historical Museum", "Art Museum"], parks: ["Gorky Park"], restaurants: ["Georgian Cuisine", "Puzata Hata"] },
+        5: { museums: ["Historical Museum", "Art Museum"], parks: ["Shevchenko Park"], restaurants: ["Rebernya", "Gastropub"] },
+      }
+    };
 
-    <script>
-        // Core variables
-        const sidebar = document.getElementById('sidebar');
-        const toggleBtn = document.getElementById('toggle-btn');
-        const placeholder = document.getElementById('placeholder');
-        const cityInfo = document.getElementById('city-info');
-        const langToggle = document.getElementById('lang-toggle');
+    // App state
+    let selectedCity = null;
+    let activeTab = 'general';
+    let tabData = {};
+    let isLoading = false;
 
-        // Language state
-        let currentLang = 'ua';
+    // DOM elements
+    const cityCountEl = document.getElementById('city-count');
+    const mapEl = document.getElementById('map');
+    const cityListEl = document.getElementById('city-list');
+    const tabsEl = document.getElementById('tabs');
+    const tabContentEl = document.getElementById('tab-content');
+    const dataNoticeEl = document.getElementById('data-notice');
+    const footerStatusEl = document.getElementById('footer-status');
 
-        // Initialize Leaflet map
-        const map = L.map('map').setView([48.4, 31.2], 6);
+    // Initialize the app
+    function initApp() {
+      // Update city count
+      cityCountEl.textContent = mockCities.length;
+      
+      // Render city markers on map
+      renderCityMarkers();
+      
+      // Render city list
+      renderCityList();
+      
+      // Set up tab click handlers
+      setupTabHandlers();
+    }
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
+    // Render city markers on the map
+    function renderCityMarkers() {
+      mapEl.innerHTML = '';
+      
+      mockCities.forEach(city => {
+        const marker = document.createElement('div');
+        marker.className = `city-marker ${selectedCity?.id === city.id ? 'selected' : ''}`;
+        marker.dataset.cityId = city.id;
+        
+        // Position marker (simplified calculation for demo)
+        marker.style.left = `${((city.lng - 22) / 10) * 100}%`;
+        marker.style.top = `${100 - ((city.lat - 45) / 7) * 100}%`;
+        
+        const dot = document.createElement('div');
+        dot.className = 'city-dot';
+        
+        const label = document.createElement('div');
+        label.className = 'city-label';
+        label.textContent = city.name;
+        
+        marker.appendChild(dot);
+        marker.appendChild(label);
+        
+        marker.addEventListener('click', () => selectCity(city));
+        
+        mapEl.appendChild(marker);
+      });
+    }
 
-        // Sample data for Ukrainian cities
-        const cities = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "name_ua": "Київ",
-                        "name_en": "Kyiv",
-                        "type_ua": "Столиця",
-                        "type_en": "Capital",
-                        "population": 2967360,
-                        "area": 839,
-                        "region_ua": "м. Київ",
-                        "region_en": "Kyiv City",
-                        "founded": 482,
-                        "population_data": [
-                            { "year": 2015, "value": 2888000 },
-                            { "year": 2016, "value": 2906000 },
-                            { "year": 2017, "value": 2925000 },
-                            { "year": 2018, "value": 2934000 },
-                            { "year": 2019, "value": 2950800 },
-                            { "year": 2020, "value": 2962000 },
-                            { "year": 2021, "value": 2967360 }
-                        ]
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [30.5234, 50.4501]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "name_ua": "Львів",
-                        "name_en": "Lviv",
-                        "type_ua": "Місто",
-                        "type_en": "City",
-                        "population": 721701,
-                        "area": 182,
-                        "region_ua": "Львівська область",
-                        "region_en": "Lviv Oblast",
-                        "founded": 1256,
-                        "population_data": [
-                            { "year": 2015, "value": 729000 },
-                            { "year": 2016, "value": 728000 },
-                            { "year": 2017, "value": 727000 },
-                            { "year": 2018, "value": 726000 },
-                            { "year": 2019, "value": 724000 },
-                            { "year": 2020, "value": 723000 },
-                            { "year": 2021, "value": 721701 }
-                        ]
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [24.0291, 49.8397]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "name_ua": "Одеса",
-                        "name_en": "Odesa",
-                        "type_ua": "Місто",
-                        "type_en": "City",
-                        "population": 1017699,
-                        "area": 162,
-                        "region_ua": "Одеська область",
-                        "region_en": "Odesa Oblast",
-                        "founded": 1794,
-                        "population_data": [
-                            { "year": 2015, "value": 1016000 },
-                            { "year": 2016, "value": 1016500 },
-                            { "year": 2017, "value": 1017000 },
-                            { "year": 2018, "value": 1017200 },
-                            { "year": 2019, "value": 1017500 },
-                            { "year": 2020, "value": 1017600 },
-                            { "year": 2021, "value": 1017699 }
-                        ]
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [30.7233, 46.4825]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "name_ua": "Харків",
-                        "name_en": "Kharkiv",
-                        "type_ua": "Місто",
-                        "type_en": "City",
-                        "population": 1443207,
-                        "area": 350,
-                        "region_ua": "Харківська область",
-                        "region_en": "Kharkiv Oblast",
-                        "founded": 1654,
-                        "population_data": [
-                            { "year": 2015, "value": 1452000 },
-                            { "year": 2016, "value": 1450000 },
-                            { "year": 2017, "value": 1447000 },
-                            { "year": 2018, "value": 1446000 },
-                            { "year": 2019, "value": 1445000 },
-                            { "year": 2020, "value": 1444000 },
-                            { "year": 2021, "value": 1443207 }
-                        ]
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [36.2304, 49.9935]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "name_ua": "Дніпро",
-                        "name_en": "Dnipro",
-                        "type_ua": "Місто",
-                        "type_en": "City",
-                        "population": 990724,
-                        "area": 409,
-                        "region_ua": "Дніпропетровська область",
-                        "region_en": "Dnipropetrovsk Oblast",
-                        "founded": 1776,
-                        "population_data": [
-                            { "year": 2015, "value": 997000 },
-                            { "year": 2016, "value": 996000 },
-                            { "year": 2017, "value": 995000 },
-                            { "year": 2018, "value": 993000 },
-                            { "year": 2019, "value": 992000 },
-                            { "year": 2020, "value": 991000 },
-                            { "year": 2021, "value": 990724 }
-                        ]
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [35.0462, 48.464]
-                    }
-                }
-            ]
-        };
+    // Render city list
+    function renderCityList() {
+      cityListEl.innerHTML = '';
+      
+      mockCities.forEach(city => {
+        const li = document.createElement('li');
+        li.className = `city-item ${selectedCity?.id === city.id ? 'selected' : ''}`;
+        li.dataset.cityId = city.id;
+        
+        li.innerHTML = `
+          <div class="city-item-content">
+            <svg class="city-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <div>
+              <p class="city-item-name">${city.name}</p>
+              <p class="city-item-region">${city.region}</p>
+            </div>
+          </div>
+        `;
+        
+        li.addEventListener('click', () => selectCity(city));
+        
+        cityListEl.appendChild(li);
+      });
+    }
 
-        // Track the current city & chart
-        let currentCity = null;
-        let populationChart = null;
+    // Set up tab click handlers
+    function setupTabHandlers() {
+      const tabs = tabsEl.querySelectorAll('.tab');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Update active tab
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          // Set active tab
+          activeTab = tab.dataset.tab;
+          
+          // Load and render content
+          loadTabContent();
+        });
+      });
+    }
 
-        // Add cities to map
-        const citiesLayer = L.geoJSON(cities, {
-            pointToLayer: (feature, latlng) => {
-                // Size based on population
-                const pop = feature.properties.population;
-                const radius = pop > 1000000 ? 10 : pop > 500000 ? 8 : 6;
+    // Select a city
+    function selectCity(city) {
+      selectedCity = city;
+      
+      // Reset tab data and active tab
+      tabData = {};
+      activeTab = 'general';
+      
+      // Update UI to reflect selection
+      updateCitySelection();
+      
+      // Load tab content
+      loadTabContent();
+      
+      // Update footer status
+      footerStatusEl.textContent = `Currently viewing: ${city.name}`;
+    }
 
-                return L.circleMarker(latlng, {
-                    radius: radius,
-                    fillColor: '#005BBB',
-                    color: '#FFD500',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                });
-            },
-            onEachFeature: (feature, layer) => {
-                // Create popup
-                const name = `<div><b>${feature.properties.name_ua}</b></div>`;
-                const pop = `<div>${feature.properties.population.toLocaleString('uk-UA')}</div>`;
-                const btn = `<button class="popup-btn">Детальніше</button>`;
-
-                layer.bindPopup(`<div style="text-align:center">${name}${pop}${btn}</div>`);
-
-                // Handle popup button click
-                layer.on('popupopen', () => {
-                    setTimeout(() => {
-                        const button = document.querySelector('.popup-btn');
-                        if (button) {
-                            button.onclick = () => {
-                                selectCity(feature);
-                                layer.closePopup();
-                            };
-                        }
-                    }, 10);
-                });
-
-                // Handle marker click
-                layer.on('click', () => selectCity(feature));
-            }
-        }).addTo(map);
-
-        // Functions
-        function selectCity(feature) {
-            currentCity = feature;
-
-            // Ensure sidebar is open
-            if (sidebar.classList.contains('sidebar-closed')) {
-                toggleSidebar();
-            }
-
-            displayCityInfo(feature);
-
-            // Show city info, hide placeholder
-            placeholder.style.display = 'none';
-            cityInfo.style.display = 'block';
+    // Update UI to reflect city selection
+    function updateCitySelection() {
+      // Update map markers
+      document.querySelectorAll('.city-marker').forEach(marker => {
+        if (parseInt(marker.dataset.cityId) === selectedCity?.id) {
+          marker.classList.add('selected');
+        } else {
+          marker.classList.remove('selected');
         }
+      });
+      
+      // Update city list
+      document.querySelectorAll('.city-item').forEach(item => {
+        if (parseInt(item.dataset.cityId) === selectedCity?.id) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+      
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(tab => {
+        if (tab.dataset.tab === activeTab) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+    }
 
-        function displayCityInfo(feature) {
-            const props = feature.properties;
-            const lang = currentLang;
-            const name = lang === 'ua' ? props.name_ua : props.name_en;
-            const type = lang === 'ua' ? props.type_ua : props.type_en;
-            const region = lang === 'ua' ? props.region_ua : props.region_en;
+    // Load tab content
+    function loadTabContent() {
+      // Hide data notice initially
+      dataNoticeEl.style.display = 'none';
+      
+      // If no city selected, show empty state
+      if (!selectedCity) {
+        tabContentEl.innerHTML = `
+          <div class="empty-state">
+            Select a city on the map to view details
+          </div>
+        `;
+        return;
+      }
+      
+      // For general tab, we always have data
+      if (activeTab === 'general') {
+        renderGeneralTab();
+        return;
+      }
+      
+      // Check if we already have data for this tab
+      if (tabData[activeTab]) {
+        renderTabContent();
+        return;
+      }
+      
+      // Show loading state
+      tabContentEl.innerHTML = `
+        <div class="loading-indicator">
+          <div class="spinner"></div>
+          <span>Loading data...</span>
+        </div>
+      `;
+      
+      // Show data notice
+      dataNoticeEl.style.display = 'flex';
+      
+      // Simulate fetching data
+      isLoading = true;
+      setTimeout(() => {
+        // Get data from mock data store
+        tabData[activeTab] = mockDetailModules[activeTab]?.[selectedCity.id] || {};
+        isLoading = false;
+        
+        // Render content
+        renderTabContent();
+      }, 600);
+    }
 
-            // Translations
-            const t = {
-                population: lang === 'ua' ? 'Населення' : 'Population',
-                area: lang === 'ua' ? 'Площа' : 'Area',
-                region: lang === 'ua' ? 'Регіон' : 'Region',
-                founded: lang === 'ua' ? 'Засновано' : 'Founded',
-                dynamics: lang === 'ua' ? 'Динаміка населення' : 'Population Dynamics',
-                sqKm: lang === 'ua' ? 'км²' : 'km²'
-            };
+    // Render general tab content
+    function renderGeneralTab() {
+      tabContentEl.innerHTML = `
+        <h2>${selectedCity.name}</h2>
+        <p>Region: ${selectedCity.region}</p>
+        <p>Coordinates: ${selectedCity.lat.toFixed(4)}, ${selectedCity.lng.toFixed(4)}</p>
+      `;
+    }
 
-            // Create HTML content
-            let html = `
-                <div class="city-header">
-                    <h2>${name}</h2>
-                    <div>${type}</div>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">${props.population.toLocaleString(lang === 'ua' ? 'uk-UA' : 'en-US')}</div>
-                        <div>${t.population}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${props.area.toLocaleString(lang === 'ua' ? 'uk-UA' : 'en-US')}</div>
-                        <div>${t.area} (${t.sqKm})</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${region}</div>
-                        <div>${t.region}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${props.founded}</div>
-                        <div>${t.founded}</div>
-                    </div>
-                </div>
-                
-                <div class="chart-container">
-                    <h3>${t.dynamics}</h3>
-                    <div style="height: 300px; width: 100%;">
-                        <canvas id="populationChart"></canvas>
-                    </div>
-                </div>
+    // Render tab content based on active tab
+    function renderTabContent() {
+      if (activeTab === 'general') {
+        renderGeneralTab();
+        return;
+      }
+      
+      // Get data for current tab
+      const data = tabData[activeTab] || {};
+      
+      // Generate tab-specific content
+      let content = '';
+      
+      switch (activeTab) {
+        case 'history':
+          if (Object.keys(data).length > 0) {
+            content = `
+              <h2>${selectedCity.name} - Historical Information</h2>
+              <p><span class="data-label">Founded:</span> ${data.founded}</p>
+              <p><span class="data-label">Historical Name:</span> ${data.historicalName}</p>
+              <div class="data-section">
+                <p class="data-label">Significant Events:</p>
+                <ul class="data-list">
+                  ${data.significantEvents?.map(event => `<li>${event}</li>`).join('') || ''}
+                </ul>
+              </div>
             `;
+          } else {
+            content = `<p class="empty-state">No historical data available for this city</p>`;
+          }
+          break;
+          
+        case 'culture':
+          if (Object.keys(data).length > 0) {
+            content = `
+              <h2>${selectedCity.name} - Cultural Information</h2>
+              <div class="data-section">
+                <p class="data-label">Landmarks:</p>
+                <ul class="data-list">
+                  ${data.landmarks?.map(landmark => `<li>${landmark}</li>`).join('') || ''}
+                </ul>
+              </div>
+              <div class="data-section">
+                <p class="data-label">Festivals:</p>
+                <ul class="data-list">
+                  ${data.festivals?.map(festival => `<li>${festival}</li>`).join('') || ''}
+                </ul>
+              </div>
+            `;
+          } else {
+            content = `<p class="empty-state">No cultural data available for this city</p>`;
+          }
+          break;
+          
+        case 'demographics':
+          if (Object.keys(data).length > 0) {
+            content = `
+              <h2>${selectedCity.name} - Demographics</h2>
+              <p><span class="data-label">Population:</span> ${data.population?.toLocaleString()}</p>
+              <div class="data-section">
+                <p class="data-label">Languages:</p>
+                <p>${data.languages?.join(", ")}</p>
+              </div>
+              <div class="data-section">
+                <p class="data-label">Ethnic Groups:</p>
+                <p>${data.ethnicGroups?.join(", ")}</p>
+              </div>
+            `;
+          } else {
+            content = `<p class="empty-state">No demographic data available for this city</p>`;
+          }
+          break;
+          
+        case 'attractions':
+          if (Object.keys(data).length > 0) {
+            content = `
+              <h2>${selectedCity.name} - Attractions</h2>
+              <div class="data-section">
+                <p class="data-label">Museums:</p>
+                <ul class="data-list">
+                  ${data.museums?.map(museum => `<li>${museum}</li>`).join('') || ''}
+                </ul>
+              </div>
+              <div class="data-section">
+                <p class="data-label">Parks:</p>
+                <ul class="data-list">
+                  ${data.parks?.map(park => `<li>${park}</li>`).join('') || ''}
+                </ul>
+              </div>
+              <div class="data-section">
+                <p class="data-label">Restaurants:</p>
+                <ul class="data-list">
+                  ${data.restaurants?.map(restaurant => `<li>${restaurant}</li>`).join('') || ''}
+                </ul>
+              </div>
+            `;
+          } else {
+            content = `<p class="empty-state">No attraction data available for this city</p>`;
+          }
+          break;
+          
+        default:
+          content = `<p class="empty-state">Select a tab to view information</p>`;
+      }
+      
+      // Update tab content
+      tabContentEl.innerHTML = content;
+    }
 
-            cityInfo.innerHTML = html;
-
-            // Create population chart
-            if (props.population_data) {
-                createPopulationChart(props.population_data);
-            }
-        }
-
-        function createPopulationChart(data) {
-            const ctx = document.getElementById('populationChart').getContext('2d');
-
-            // Destroy previous chart if exists
-            if (populationChart) {
-                populationChart.destroy();
-            }
-
-            // Create new chart
-            populationChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.map(item => item.year),
-                    datasets: [{
-                        label: currentLang === 'ua' ? 'Населення' : 'Population',
-                        data: data.map(item => item.value),
-                        borderColor: '#005BBB',
-                        backgroundColor: 'rgba(0, 91, 187, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            grace: '5%'
-                        }
-                    },
-                    layout: {
-                        padding: 10
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        }
-                    }
-                }
-            });
-        }
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('sidebar-closed');
-            toggleBtn.classList.toggle('toggle-btn-closed');
-            toggleBtn.innerHTML = sidebar.classList.contains('sidebar-closed') ? '&gt;' : '&lt;';
-        }
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'ua' ? 'en' : 'ua';
-            langToggle.textContent = currentLang === 'ua' ? 'EN' : 'UA';
-
-            // Update UI language
-            document.querySelectorAll('.ua, .en').forEach(el => {
-                if (el.classList.contains(currentLang)) {
-                    el.style.display = 'inline-block';
-                } else {
-                    el.style.display = 'none';
-                }
-            });
-
-            // Update popup content
-            map.closePopup();
-
-            // Update current city info if available
-            if (currentCity) {
-                displayCityInfo(currentCity);
-            }
-        }
-
-        // Event listeners
-        toggleBtn.addEventListener('click', toggleSidebar);
-        langToggle.addEventListener('click', toggleLanguage);
-
-        // Calculate general statistics
-        function calculateStatistics() {
-            const allCities = cities.features;
-
-            // Calculate average population
-            const avgPopulation = allCities.reduce((sum, city) =>
-                sum + city.properties.population, 0) / allCities.length;
-
-            // Find city with population growth
-            const growingCities = allCities.filter(city => {
-                const data = city.properties.population_data;
-                return data && data[data.length - 1].value > data[0].value;
-            });
-
-            const growthPercentage = (growingCities.length / allCities.length) * 100;
-
-            console.log(`Average population: ${Math.round(avgPopulation).toLocaleString()}`);
-            console.log(`Cities with growth: ${growthPercentage.toFixed(1)}%`);
-        }
-
-        calculateStatistics();
-    </script>
+    // Initialize the app on page load
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
 </body>
-
 </html>
